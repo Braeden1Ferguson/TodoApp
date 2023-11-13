@@ -29,19 +29,14 @@ try {
     tasks = JSON.parse(data);
     console.log('Schedule loaded successfully.');
   } catch (err) {
-    console.error('Error loading schedule:', err.message);
-    //create empty array if file loading of schedule.json fails
-    tasks = [];
-    console.log('Created empty schedule');
-  }
-
-
-  
-  // Save tasks to JSON file
-  const saveSchedule = () => {
-    fs.writeFileSync('schedule.json', JSON.stringify(tasks), 'utf-8');
-    console.log('Schedule saved successfully.');
-  };
+    if (err.code === 'ENOENT') {
+        console.log('schedule.json does not exist. Creating an empty array.');
+        fs.writeFileSync('schedule.json', '[]', 'utf-8');
+    } else {
+        console.error('Error loading schedule:', err.message);
+    }
+}
+ 
 
   // Middleware to save schedule on every request
 app.use((req, res, next) => {
@@ -49,6 +44,10 @@ app.use((req, res, next) => {
     next();
   });
 
+const saveSchedule = () => {
+    fs.writeFileSync('schedule.json', JSON.stringify(tasks), 'utf-8');
+    console.log('Schedule saved successfully.');
+};
 
 //creates a new task based on the CRUD opperations in App.js
 app.post('/tasks', (req, res) => {
@@ -78,7 +77,16 @@ app.patch('/tasks/:id', (req, res) => {
     res.json(taskToUpdate);
 });
 
+// Handles the PUT request to update tasks
+app.put('/tasks', (req, res) => {
+    tasks = req.body;
+    saveSchedule();
+    res.json({ message: 'Schedule updated successfully' });
+  });
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);
 });
+
+module.exports - { saveSchedule };
